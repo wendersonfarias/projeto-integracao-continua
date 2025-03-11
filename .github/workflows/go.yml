@@ -46,7 +46,6 @@ jobs:
     - name: build
       run: go build -o main main.go
 
-  UPLOAD:
     - name: Projeto compilado
       uses: actions/upload-artifact@v4
       with:
