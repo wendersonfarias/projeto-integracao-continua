@@ -23,14 +23,22 @@ jobs:
     - name: Verifica conexão com PostgreSQL
       run: |
         echo "Verificando conexão com PostgreSQL..."
-        PGPASSWORD=${{ secrets.DB_PASSWORD }} pg_isready -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -p 5432
-        echo "Conexão bem-sucedida!"
+        for i in {1..10}; do
+          if PGPASSWORD=root pg_isready -h localhost -U root -d root -p 5432; then
+            echo "Conexão bem-sucedida!"
+            exit 0
+          fi
+          echo "Tentativa $i: PostgreSQL não está pronto. Aguardando..."
+          sleep 3
+        done
+        echo "Erro: PostgreSQL não está respondendo após 10 tentativas."
+        exit 1
 
     - name: Testa a aplicação
       env:
         DB_HOST: localhost
-        DB_USER: ${{ secrets.DB_USER }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_USER: root
+        DB_PASSWORD: root
+        DB_NAME: root
         DB_PORT: 5432
       run: go test -v main_test.go
