@@ -1,6 +1,3 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
 name: INTEGRAÇÃO CONTINUA
 
 on:
@@ -10,7 +7,6 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   CI:
     runs-on: ubuntu-latest
     steps:
@@ -22,7 +18,7 @@ jobs:
         go-version: '1.22'
 
     - name: Inicia banco de dados 
-      run: docker compose up -d postgres
+      run: docker-compose up -d postgres
 
     - name: Lint 
       uses: golangci/golangci-lint-action@v6
@@ -33,15 +29,17 @@ jobs:
     - name: Verifica containers ativos
       run: docker ps -a
 
-
     - name: Debug - Verificar variáveis de ambiente
       run: echo "DB_HOST=${{ secrets.DB_HOST }} DB_USER=${{ secrets.DB_USER }} DB_NAME=${{ secrets.DB_NAME }} DB_PORT=${{ secrets.DB_PORT }}"
 
     - name: Testa conexão com o banco
       run: | 
-        PGPASSWORD=${{ secrets.DB_PASSWORD }} pg_isready -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -p 5432
-
+        echo "Aguardando o banco de dados estar pronto..."
+        until PGPASSWORD=${{ secrets.DB_PASSWORD }} pg_isready -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -p 5432; do
+          echo "Banco de dados não está pronto. Aguardando..."
+          sleep 2
+        done
+        echo "Banco de dados pronto para conexões."
 
     - name: Testa a aplicação
-      run: DB_HOST=${{ secrets.DB_HOST }} DB_USER=${{ secrets.DB_USER }}  DB_PASSWORD=${{ secrets.DB_PASSWORD }} DB_NAME=${{ secrets.DB_NAME }} DB_PORT=${{ secrets.DB_PORT }} go test -v main_test.go
-    
+      run: DB_HOST=${{ secrets.DB_HOST }} DB_USER=${{ secrets.DB_USER }} DB_PASSWORD=${{ secrets.DB_PASSWORD }} DB_NAME=${{ secrets.DB_NAME }} DB_PORT=${{ secrets.DB_PORT }} go test -v main_test.go
