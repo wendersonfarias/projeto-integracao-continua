@@ -18,7 +18,18 @@ jobs:
         go-version: '1.22'
 
     - name: Inicia banco de dados 
-      run: docker-compose up -d postgres
+      run: docker compose up -d postgres
+
+    - name: Espera PostgreSQL ficar pronto
+      run: |
+        for i in {1..10}; do
+          if pg_isready -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -p 5432; then
+            echo "PostgreSQL está pronto!"
+            break
+          fi
+          echo "Esperando PostgreSQL ficar pronto..."
+          sleep 3
+        done
 
     - name: Lint 
       uses: golangci/golangci-lint-action@v6
@@ -26,20 +37,11 @@ jobs:
         version: v1.64
         args: controllers/ database/ models/ routes/
 
-    - name: Verifica containers ativos
-      run: docker ps -a
-
-    - name: Debug - Verificar variáveis de ambiente
-      run: echo "DB_HOST=${{ secrets.DB_HOST }} DB_USER=${{ secrets.DB_USER }} DB_NAME=${{ secrets.DB_NAME }} DB_PORT=${{ secrets.DB_PORT }}"
-
-    - name: Testa conexão com o banco
-      run: | 
-        echo "Aguardando o banco de dados estar pronto..."
-        until PGPASSWORD=${{ secrets.DB_PASSWORD }} pg_isready -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -p 5432; do
-          echo "Banco de dados não está pronto. Aguardando..."
-          sleep 2
-        done
-        echo "Banco de dados pronto para conexões."
-
     - name: Testa a aplicação
-      run: DB_HOST=${{ secrets.DB_HOST }} DB_USER=${{ secrets.DB_USER }} DB_PASSWORD=${{ secrets.DB_PASSWORD }} DB_NAME=${{ secrets.DB_NAME }} DB_PORT=${{ secrets.DB_PORT }} go test -v main_test.go
+      env:
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+      run: go test -v ./...
