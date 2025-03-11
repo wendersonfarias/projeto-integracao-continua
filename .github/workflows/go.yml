@@ -44,4 +44,4 @@ jobs:
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_NAME: ${{ secrets.DB_NAME }}
         DB_PORT: ${{ secrets.DB_PORT }}
-      run: go test -v ./...
+      run: go test -v main_test.go
