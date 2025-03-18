@@ -34,6 +34,12 @@ jobs:
         echo "Erro: PostgreSQL não está respondendo após 10 tentativas."
         exit 1
 
+    - name: Lint 
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: v1.64
+        args: controllers/ database/ models/ routes/
+
     - name: Testa a aplicação
       env:
         DB_HOST: ${{ secrets.DB_HOST }}
